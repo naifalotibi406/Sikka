@@ -34,9 +34,9 @@ Open: http://127.0.0.1:5000
 
 | Role | Username | Password |
 |---|---|---|
-| Admin | admin | admin123 |
-| Staff | staff1 | staff123 |
-| Customer | customer1 | customer123 |
+| admin  | addmin | admin123 |
+| Staff | Staff  | staff123 |
+| Customer | Costumer  | customer123 |
 
 ## 👥 Team
 
