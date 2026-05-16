@@ -16,10 +16,16 @@ Sikka is a full-featured train schedule and reservation management system built 
 
 ## 🛠️ Tech Stack
 
-- **Backend:** Python 3.10+, Flask
-- **Database:** SQLite
-- **Frontend:** HTML, CSS, Jinja2
-- **Architecture:** MVC + Layered
+- Python / Flask
+Backend framework
+SQLite
+Relational database
+Bootstrap 5
+Responsive UI
+HTML / CSS
+Custom heritage theme
+Jinja2
+Templating engine
 
 ## 🚀 How to Run
 
