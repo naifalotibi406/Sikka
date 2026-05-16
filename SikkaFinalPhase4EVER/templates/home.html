@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+
+<!-- ── HERO ──────────────────────────────────────────── -->
+<div class="hero">
+  <img class="hero-bg"
+       src="{{ url_for('static', filename='images/image_cec6fe.jpg') }}"
+       alt="Sikka"
+       onerror="this.style.display='none'">
+  <div class="hero-overlay"></div>
+  <div class="hero-content">
+    <span class="hero-badge">{{ t.app_name }} — {{ t.tagline }}</span>
+    <h1 id="hero-title">{{ t.welcome }}</h1>
+    <p  id="hero-sub">{{ t.welcome_sub }}</p>
+    <a href="{{ url_for('search') }}" class="btn btn-gold btn-lg px-5">
+      <i class="bi bi-search me-2"></i>{{ t.book_now }}
+    </a>
+  </div>
+</div>
+
+<!-- ── DESTINATIONS ───────────────────────────────────── -->
+<div class="d-flex justify-content-between align-items-end mb-3">
+  <div class="section-head mb-0">
+    <h2>{{ t.destinations }}</h2>
+    <p>{{ "اكتشف وجهات سِكَّة عبر المملكة" if lang=='ar'
+          else "Discover Saudi Arabia on the Sikka network" }}</p>
+  </div>
+  {% if (session.get('user_role') or session.get('role','')) == 'admin' %}
+  <a href="{{ url_for('edit_cities') }}" class="btn btn-outline-heritage btn-sm">
+    <i class="bi bi-pencil me-1"></i>{{ "تعديل" if lang=='ar' else "Edit" }}
+  </a>
+  {% endif %}
+</div>
+
+<div class="row g-3 mb-5">
+  {% for c in cities %}
+  <div class="col-6 col-md-3">
+    <div class="city-card">
+      <div class="city-img-wrap">
+        <img src="{{ url_for('static', filename=c.img) }}"
+             alt="{{ c.ar_name if lang=='ar' else c.en_name }}"
+             loading="lazy"
+             onerror="this.parentElement.style.background='{{ c.color }}'">
+      </div>
+      <div class="city-card-body">
+        <div class="city-name">{{ c.ar_name if lang=='ar' else c.en_name }}</div>
+        <div class="city-desc">{{ c.ar_desc if lang=='ar' else c.en_desc }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<!-- ── MODERN TRAIN (image_cfa7e1.jpg, full-width) ────── -->
+<div class="train-feature mb-5">
+  <img class="train-feature-img"
+       src="{{ url_for('static', filename='images/image_cfa7e1.jpg') }}"
+       alt="{{ 'قطار سِكَّة عالي السرعة' if lang=='ar' else 'Sikka High-Speed Train' }}"
+       onerror="this.closest('.train-feature').style.display='none'">
+  <div class="train-feature-overlay">
+    <div>
+      <span class="hero-badge d-inline-block mb-2">{{ t.trains }}</span>
+      <h3>{{ "قطارات سِكَّة عالية السرعة" if lang=='ar' else "Sikka High-Speed Rail" }}</h3>
+      <p>{{ "رحلة مريحة وسريعة تربط مدن المملكة" if lang=='ar'
+            else "Connecting Saudi cities in comfort and speed" }}</p>
+      <a href="{{ url_for('search') }}" class="btn btn-gold mt-2 px-4">{{ t.book_now }}</a>
+    </div>
+  </div>
+</div>
+
+<!-- ── TRAINS TABLE ───────────────────────────────────── -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">
+      <i class="bi bi-train-front me-2"></i>{{ t.trains }}
+    </div>
+    <a href="{{ url_for('search') }}" class="btn btn-gold btn-sm px-3">{{ t.book_now }}</a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>{{ t.train_name }}</th>
+          <th>{{ t.route }}</th>
+          <th>{{ t.departure }}</th>
+          <th>{{ t.arrival }}</th>
+          <th>Economy SAR</th>
+          <th>Business SAR</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for tr in trains %}
+      <tr>
+        <td class="fw-semibold">{{ tr.name }}</td>
+        <td><small class="text-muted">{{ tr.route }}</small></td>
+        <td><span class="badge bg-light text-dark border">{{ tr.departure }}</span></td>
+        <td><span class="badge bg-light text-dark border">{{ tr.arrival }}</span></td>
+        <td class="fw-semibold">{{ tr.price_economy|int }}</td>
+        <td style="color:var(--gold);font-weight:600;">{{ tr.price_business|int }}</td>
+        <td>
+          <a href="{{ url_for('search') }}" class="btn btn-heritage btn-sm">
+            {{ t.book_now }}
+          </a>
+        </td>
+      </tr>
+      {% else %}
+      <tr>
+        <td colspan="7" class="text-center py-4 text-muted">No trains available.</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}

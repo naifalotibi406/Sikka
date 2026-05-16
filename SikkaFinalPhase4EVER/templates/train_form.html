@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block page_title %}{% if train %}{{ t.edit }} Train{% else %}{{ t.add_train }}{% endif %}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-7">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">{% if train %}{{ t.edit }}{% else %}{{ t.add_train }}{% endif %}</div></div>
+      <div class="card-body p-4">
+        <form method="POST">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">{{ t.train_name }}</label>
+              <input type="text" name="name" class="form-control" value="{{ train.name if train else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ t.route }}</label>
+              <input type="text" name="route" class="form-control" value="{{ train.route if train else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ t.departure }}</label>
+              <input type="time" name="departure" class="form-control" value="{{ train.departure if train else '' }}" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">{{ t.arrival }}</label>
+              <input type="time" name="arrival" class="form-control" value="{{ train.arrival if train else '' }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Economy Capacity</label>
+              <input type="number" name="cap_eco" class="form-control" value="{{ train.capacity_economy if train else 60 }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Business Capacity</label>
+              <input type="number" name="cap_bus" class="form-control" value="{{ train.capacity_business if train else 20 }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Economy Price (SAR)</label>
+              <input type="number" name="price_eco" class="form-control" step="0.01" value="{{ train.price_economy if train else '' }}" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Business Price (SAR)</label>
+              <input type="number" name="price_bus" class="form-control" step="0.01" value="{{ train.price_business if train else '' }}" required>
+            </div>
+          </div>
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-heritage">{{ t.save }}</button>
+            <a href="{{ url_for('trains') }}" class="btn btn-outline-heritage">{{ t.cancel }}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

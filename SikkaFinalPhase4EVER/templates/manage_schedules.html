@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.manage_schedules }} — {{ train.name }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">{{ train.name }} — {{ train.route }}</div>
+    <a href="{{ url_for('trains') }}" class="btn btn-outline-heritage btn-sm">← Back</a>
+  </div>
+  <div class="card-body p-4">
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="card" style="border:1px solid var(--border);">
+          <div class="card-body">
+            <div style="font-weight:600;color:var(--green);margin-bottom:12px;font-size:14px;">Add Available Date</div>
+            <form method="POST">
+              <input type="hidden" name="action" value="add">
+              <div class="mb-3">
+                <label class="form-label">Travel Date</label>
+                <input type="date" name="sdate" class="form-control" min="{{ today }}" required>
+              </div>
+              <button type="submit" class="btn btn-heritage w-100">Add Date</button>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-8">
+        <div style="font-weight:600;color:var(--green);margin-bottom:12px;font-size:14px;">
+          Scheduled Dates ({{ schedules|length }})
+        </div>
+        {% if schedules %}
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          {% for s in schedules %}
+          <div style="display:flex;align-items:center;gap:6px;background:var(--cream);border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:13px;">
+            <i class="bi bi-calendar3" style="color:var(--gold);font-size:13px;"></i>
+            <span>{{ s.travel_date }}</span>
+            <form method="POST" style="margin:0;" onsubmit="return confirm('Remove {{ s.travel_date }}?')">
+              <input type="hidden" name="action" value="remove">
+              <input type="hidden" name="sdate" value="{{ s.travel_date }}">
+              <button type="submit" style="background:none;border:none;cursor:pointer;color:#991B1B;font-size:13px;padding:0 0 0 4px;">×</button>
+            </form>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <p style="color:var(--muted);font-size:13px;">No dates scheduled yet. Add dates above.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.book_now }}{% endblock %}
+{% block content %}
+<div class="row g-3">
+
+  <!-- Train list -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header"><div class="card-header-title">1. {{ t.select_train }}</div></div>
+      <div style="overflow-y:auto;max-height:600px;">
+        {% for tr in trains %}
+        <a href="{{ url_for('book',train_id=tr.id) }}"
+           class="train-option {% if selected and selected.id==tr.id %}active{% endif %}">
+          <div class="train-name">{{ tr.name }}</div>
+          <div class="train-route">{{ tr.route }}<br>{{ tr.departure }} → {{ tr.arrival }}</div>
+          <div class="mt-1" style="font-size:11px;">
+            Economy: <strong>{{ tr.price_economy|int }} SAR</strong> &nbsp;|&nbsp;
+            Business: <strong>{{ tr.price_business|int }} SAR</strong>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Booking form -->
+  <div class="col-md-8">
+    {% if selected %}
+    <div class="card">
+      <div class="card-header">
+        <div>
+          <div class="card-header-title">{{ selected.name }} — {{ selected.route }}</div>
+          <small style="color:var(--muted);">
+            {{ selected.departure }} → {{ selected.arrival }}
+            {% if travel_date %}&nbsp;|&nbsp; {{ travel_date }}{% endif %}
+          </small>
+        </div>
+        <a href="{{ url_for('search') }}" class="btn btn-sm btn-outline-heritage">
+          ← {{ t.search_title }}
+        </a>
+      </div>
+      <div class="card-body">
+        <form method="POST" id="bookForm">
+          <input type="hidden" name="train_id" value="{{ selected.id }}">
+          <input type="hidden" name="travel_date" value="{{ travel_date }}">
+          <input type="hidden" name="seat_no"  id="seat_input" value="">
+
+          <!-- Step 2: Class selection tabs -->
+          <div class="mb-3">
+            <div class="form-label">2. {{ t.seat_class }}</div>
+            <div class="class-tab-wrap">
+              <button type="button" class="class-tab active-eco" id="tab-eco"
+                      onclick="switchClass('economy')">
+                {{ t.economy }} — {{ selected.price_economy|int }} SAR
+              </button>
+              <button type="button" class="class-tab" id="tab-bus"
+                      onclick="switchClass('business')">
+                {{ t.business }} — {{ selected.price_business|int }} SAR
+              </button>
+            </div>
+            <input type="hidden" name="seat_class" id="seat_class_input" value="economy">
+          </div>
+
+          <!-- Economy seat map -->
+          <div id="eco-map" class="mb-3">
+            <div class="form-label" style="font-size:11px;color:var(--muted);">Economy — {{ eco_seats|selectattr('1')|list|length }} available</div>
+            <div class="seat-map">
+              {% for seat, is_free in eco_seats %}
+              <div class="seat {% if is_free %}free{% else %}taken{% endif %}"
+                   id="s_{{ seat }}"
+                   onclick="{% if is_free %}pickSeat('{{ seat }}','economy'){% endif %}">
+                {{ seat[1:] }}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- Business seat map -->
+          <div id="bus-map" class="mb-3" style="display:none;">
+            <div class="form-label" style="font-size:11px;color:var(--muted);">Business — {{ bus_seats|selectattr('1')|list|length }} available</div>
+            <div class="seat-map">
+              {% for seat, is_free in bus_seats %}
+              <div class="seat {% if is_free %}bus-free{% else %}taken{% endif %}"
+                   id="s_{{ seat }}"
+                   onclick="{% if is_free %}pickSeat('{{ seat }}','business'){% endif %}">
+                {{ seat[1:] }}
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div id="seat_info" class="alert alert-info py-2 d-none" style="font-size:13px;">
+            {{ t.legend_selected }}: <strong id="seat_display"></strong>
+          </div>
+
+          <!-- Step 3: Passenger type -->
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">3. {{ t.passenger_type }}</label>
+              <select name="passenger_type" id="pax_type" class="form-select" onchange="updatePrice()">
+                <option value="adult">{{ t.adult }}</option>
+                <option value="child">{{ t.child }}</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">4. {{ t.select_passenger }}</label>
+              <select name="passenger_id" class="form-select" required>
+                <option value="">— {{ t.select_passenger }} —</option>
+                {% for p in pax_list %}
+                <option value="{{ p.id }}">{{ p.name }} ({{ p.national_id }})</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          {% if not pax_list %}
+          <div class="alert alert-warning py-2" style="font-size:13px;">
+            No passengers yet. <a href="{{ url_for('add_passenger') }}" style="color:var(--green);">Add one first.</a>
+          </div>
+          {% endif %}
+
+          <!-- Price breakdown -->
+          <div class="price-calc mb-4">
+            <div class="label">{{ t.calc_title }}</div>
+            <div class="amount" id="price_display">{{ selected.price_economy|int }} SAR</div>
+            <div class="note" id="price_note">Economy / Adult (1.0×)</div>
+          </div>
+
+          <!-- Seat legend -->
+          <div class="d-flex gap-3 mb-4" style="font-size:12px;">
+            <span><span class="seat free" style="width:22px;height:18px;display:inline-flex;border-radius:4px;font-size:9px;align-items:center;justify-content:center;">S</span> {{ t.legend_free }}</span>
+            <span><span class="seat taken" style="width:22px;height:18px;display:inline-flex;border-radius:4px;font-size:9px;align-items:center;justify-content:center;">S</span> {{ t.legend_taken }}</span>
+            <span><span class="seat selected" style="width:22px;height:18px;display:inline-flex;border-radius:4px;font-size:9px;align-items:center;justify-content:center;">S</span> {{ t.legend_selected }}</span>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-heritage px-4" id="confirmBtn" disabled>{{ t.confirm_booking }}</button>
+            <a href="{{ url_for('reservations') }}" class="btn btn-outline-heritage">{{ t.cancel }}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% else %}
+    <div class="card">
+      <div class="card-body text-center py-5" style="color:var(--muted);">
+        <i class="bi bi-arrow-left-circle" style="font-size:48px;color:var(--sand);"></i>
+        <p class="mt-3">{{ t.select_train }}</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const prices = {
+  // Base price already reflects class — only passenger discount applied here
+  economy:  { adult: {{ selected.price_economy if selected else 0 }},  child: {{ (selected.price_economy  * 0.5) | round(2) if selected else 0 }} },
+  business: { adult: {{ selected.price_business if selected else 0 }}, child: {{ (selected.price_business * 0.5) | round(2) if selected else 0 }} },
+};
+let curClass = 'economy';
+let curSeat  = null;
+
+function switchClass(cls) {
+  curClass = cls;
+  curSeat  = null;
+  document.getElementById('seat_input').value   = '';
+  document.getElementById('seat_class_input').value = cls;
+  document.getElementById('seat_info').classList.add('d-none');
+  document.getElementById('confirmBtn').disabled = true;
+
+  document.getElementById('eco-map').style.display = cls==='economy' ? '' : 'none';
+  document.getElementById('bus-map').style.display = cls==='business' ? '' : 'none';
+
+  document.getElementById('tab-eco').className = 'class-tab ' + (cls==='economy' ? 'active-eco' : '');
+  document.getElementById('tab-bus').className = 'class-tab ' + (cls==='business' ? 'active-bus' : '');
+  updatePrice();
+}
+
+function pickSeat(seat, cls) {
+  // deselect previous
+  if (curSeat) {
+    const prev = document.getElementById('s_' + curSeat);
+    if (prev) {
+      prev.className = prev.className.replace('selected','').replace('bus-selected','') +
+        (cls==='business' ? ' bus-free' : ' free');
+    }
+  }
+  curSeat = seat;
+  const el = document.getElementById('s_' + seat);
+  if (cls==='business') {
+    el.className = el.className.replace('bus-free','bus-selected');
+  } else {
+    el.className = el.className.replace('free','selected');
+  }
+  document.getElementById('seat_input').value = seat;
+  document.getElementById('seat_display').textContent = seat;
+  document.getElementById('seat_info').classList.remove('d-none');
+  document.getElementById('confirmBtn').disabled = false;
+}
+
+function updatePrice() {
+  const pt    = document.getElementById('pax_type').value;
+  const price = prices[curClass][pt];
+  document.getElementById('price_display').textContent = Math.round(price) + ' SAR';
+  const className = curClass==='business' ? 'Business ({{ selected.price_business|int if selected else 0 }} SAR)' : 'Economy ({{ selected.price_economy|int if selected else 0 }} SAR)';
+  const paxLabel = pt==='adult' ? 'Adult' : 'Child (−50%)';
+  document.getElementById('price_note').textContent = className + ' / ' + paxLabel;
+}
+</script>
+{% endblock %}

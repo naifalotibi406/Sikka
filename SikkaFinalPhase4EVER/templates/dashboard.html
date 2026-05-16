@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.dashboard }}{% endblock %}
+{% block content %}
+<div class="row g-3 mb-4">
+  {% set cards = [
+    (stats.trains, t.total_trains,   'linear-gradient(135deg,#1B4332,#2D6A4F)'),
+    (stats.res,    t.total_bookings, 'linear-gradient(135deg,#0D4A6B,#1A6FA0)'),
+    (stats.pass_,  t.total_passengers,'linear-gradient(135deg,#5C3A1E,#8B6040)'),
+    (("%.0f"|format(stats.rev))+" SAR", t.total_revenue,'linear-gradient(135deg,#7A5000,#C49A3C)'),
+  ] %}
+  {% for val, label, grad in cards %}
+  <div class="col-6 col-md-3">
+    <div class="stat-card" style="background:{{ grad }};">
+      <div><div class="number">{{ val }}</div><div class="label">{{ label }}</div></div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<div class="row g-3">
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <div class="card-header-title">{{ t.trains }}</div>
+        <a href="{{ url_for('trains') }}" class="btn btn-sm btn-outline-heritage">All</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table mb-0">
+          <thead><tr><th>{{ t.train_name }}</th><th>{{ t.route }}</th><th>Economy</th><th>Business</th></tr></thead>
+          <tbody>
+          {% for tr in trains %}
+          <tr>
+            <td class="fw-semibold">{{ tr.name }}</td>
+            <td><small style="color:var(--muted);">{{ tr.route }}</small></td>
+            <td>{{ tr.price_economy|int }}</td>
+            <td style="color:var(--gold);font-weight:600;">{{ tr.price_business|int }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center py-4" style="color:var(--muted);">No trains.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <div class="card-header-title">{{ t.reservations }}</div>
+        <a href="{{ url_for('reservations') }}" class="btn btn-sm btn-outline-heritage">All</a>
+      </div>
+      <div class="card-body p-0">
+        <table class="table mb-0">
+          <thead><tr><th>{{ t.passenger }}</th><th>{{ t.seat_class }}</th><th>{{ t.passenger_type }}</th><th>{{ t.price_paid }}</th></tr></thead>
+          <tbody>
+          {% for r in recent %}
+          <tr>
+            <td class="fw-semibold">{{ r.pname }}</td>
+            <td><span class="badge-{{ r.seat_class }}">{% if r.seat_class=='business' %}{{ t.business }}{% else %}{{ t.economy }}{% endif %}</span></td>
+            <td><span class="badge-{{ r.passenger_type }}">{{ t.adult if r.passenger_type=='adult' else t.child }}</span></td>
+            <td style="color:var(--green);font-weight:600;">{{ "%.0f"|format(r.price_paid) }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="4" class="text-center py-4" style="color:var(--muted);">No bookings.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="mt-3 d-flex gap-2">
+  <a href="{{ url_for('search') }}"      class="btn btn-heritage">{{ t.new_reservation }}</a>
+  {% if session.role=='admin' %}
+  <a href="{{ url_for('add_train') }}" class="btn btn-gold">{{ t.add_train }}</a>
+  <a href="{{ url_for('reports') }}"   class="btn btn-outline-heritage">{{ t.reports }}</a>
+  {% endif %}
+</div>
+{% endblock %}

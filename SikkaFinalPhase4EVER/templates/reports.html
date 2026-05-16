@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.reports }}{% endblock %}
+{% block content %}
+<div class="card mb-4">
+  <div class="card-header"><div class="card-header-title">{{ t.reports }}</div></div>
+  <div class="card-body">
+    <form method="POST" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label">{{ t.report_type }}</label>
+        <select name="report_type" class="form-select" onchange="toggleTo(this.value)">
+          <option value="daily"   {% if rt=='daily'   %}selected{% endif %}>{{ t.daily }}</option>
+          <option value="monthly" {% if rt=='monthly' %}selected{% endif %}>{{ t.monthly }}</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">{{ t.date_from }}</label>
+        <input type="date" name="date_from" class="form-control" value="{{ df }}">
+      </div>
+      <div class="col-md-3" id="to_wrap">
+        <label class="form-label">{{ t.date_to }}</label>
+        <input type="date" name="date_to" class="form-control" value="{{ dt }}">
+      </div>
+      <div class="col-md-3">
+        <button type="submit" class="btn btn-heritage w-100">{{ t.generate }}</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% if submitted %}
+  {% if rows %}
+  <div class="row g-3 mb-3">
+    <div class="col-md-4"><div class="stat-card" style="background:linear-gradient(135deg,#1B4332,#2D6A4F);"><div><div class="number">{{ rows|length }}</div><div class="label">{{ t.total_bookings }}</div></div></div></div>
+    <div class="col-md-4"><div class="stat-card" style="background:linear-gradient(135deg,#7A5000,#C49A3C);"><div><div class="number">{{ "%.0f"|format(rev) }} SAR</div><div class="label">{{ t.total_revenue }}</div></div></div></div>
+  </div>
+  <div class="card">
+    <div class="card-header"><div class="card-header-title">Results</div></div>
+    <div class="card-body p-0">
+      <table class="table mb-0">
+        <thead><tr><th>#</th><th>{{ t.passenger }}</th><th>{{ t.train_name }}</th><th>{{ t.seat }}</th><th>{{ t.seat_class }}</th><th>{{ t.passenger_type }}</th><th>{{ t.price_paid }}</th><th>{{ t.date }}</th></tr></thead>
+        <tbody>
+        {% for r in rows %}
+        <tr>
+          <td>{{ loop.index }}</td>
+          <td class="fw-semibold">{{ r.pname }}</td>
+          <td>{{ r.tname }}</td>
+          <td>{{ r.seat_no }}</td>
+          <td>{% if r.seat_class=='business' %}<span class="badge-business">{{ t.business }}</span>{% else %}<span class="badge-economy">{{ t.economy }}</span>{% endif %}</td>
+          <td>{% if r.passenger_type=='adult' %}<span class="badge-adult">{{ t.adult }}</span>{% else %}<span class="badge-child">{{ t.child }}</span>{% endif %}</td>
+          <td class="price-snapshot">{{ "%.2f"|format(r.final_paid_price if r.final_paid_price else r.price_paid) }} SAR</td>
+          <td><small style="color:var(--muted);">{{ r.created_at[:10] }}</small></td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% else %}
+  <div class="alert alert-warning">{{ t.no_data }}</div>
+  {% endif %}
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+function toggleTo(v){ document.getElementById('to_wrap').style.display=v==='monthly'?'':'none'; }
+toggleTo('{{ rt }}');
+</script>
+{% endblock %}

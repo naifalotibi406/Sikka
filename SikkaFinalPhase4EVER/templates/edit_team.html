@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block page_title %}Edit Team Members{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">Edit Team Information</div>
+    <a href="{{ url_for('about') }}" class="btn btn-outline-heritage btn-sm">← Back to About</a>
+  </div>
+  <div class="card-body p-4">
+
+    <div class="alert alert-info py-2 mb-4" style="font-size:13px;">
+      <i class="bi bi-info-circle me-2"></i>
+      To change a member's photo, replace the file in <code>static/images/</code>
+      (member1.jpg, member2.jpg, etc.) and refresh the page.
+    </div>
+
+    <form method="POST">
+      <div class="row g-4">
+        {% for m in team %}{% set i = loop.index0 %}
+        <div class="col-md-6">
+          <div class="card" style="border:2px solid var(--border);">
+            <div class="card-header" style="background:var(--cream);">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <img src="{{ url_for('static', filename=m.img) }}"
+                     alt="{{ m.name }}"
+                     style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid var(--gold);"
+                     onerror="this.src='https://ui-avatars.com/api/?name={{ m.name | replace(' ','+') }}&background=1B4332&color=C49A3C&size=96&bold=true'">
+                <div>
+                  <div style="font-weight:700;color:var(--green);font-size:14px;">Member {{ loop.index }}</div>
+                  <div style="font-size:11px;color:var(--muted);">Photo: <code>{{ m.img }}</code></div>
+                </div>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="mb-3">
+                <label class="form-label">Full Name</label>
+                <input type="text" name="name_{{ i }}" class="form-control" value="{{ m.name }}" required>
+              </div>
+              <div class="row g-2 mb-3">
+                <div class="col-6">
+                  <label class="form-label">Role (English)</label>
+                  <input type="text" name="role_en_{{ i }}" class="form-control" value="{{ m.role_en }}">
+                </div>
+                <div class="col-6">
+                  <label class="form-label">Role (Arabic)</label>
+                  <input type="text" name="role_ar_{{ i }}" class="form-control" value="{{ m.role_ar }}" dir="rtl">
+                </div>
+              </div>
+              <div class="mb-2">
+                <label class="form-label">Bio (English)</label>
+                <textarea name="bio_en_{{ i }}" class="form-control" rows="2" style="font-size:12px;">{{ m.bio_en }}</textarea>
+              </div>
+              <div>
+                <label class="form-label">Bio (Arabic)</label>
+                <textarea name="bio_ar_{{ i }}" class="form-control" rows="2" style="font-size:12px;" dir="rtl">{{ m.bio_ar }}</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-heritage px-5">Save Changes</button>
+        <a href="{{ url_for('about') }}" class="btn btn-outline-heritage">Cancel</a>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

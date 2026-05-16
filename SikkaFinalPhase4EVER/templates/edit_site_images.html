@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.manage_images }}{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">{{ t.manage_images }}</div>
+    <a href="{{ url_for('home') }}" class="btn btn-outline-heritage btn-sm">← Back</a>
+  </div>
+  <div class="card-body p-4">
+
+    <div class="alert alert-info py-2 mb-4" style="font-size:13px;">
+      <i class="bi bi-info-circle me-2"></i>
+      Place files in <code>Sikka/static/images/</code> then enter the filename below.
+      Example: <code>images/my_hero.jpg</code> &nbsp;—&nbsp;
+      Leave blank to use the built-in default.
+    </div>
+
+    <form method="POST">
+      {% set labels = {
+        'hero_bg':    ('Home — Hero Background', 'The large background image on the home page (recommended: a modern train or skyline, 1400×500px)'),
+        'login_bg':   ('Login — Left Panel Background', 'The left panel image on the sign-in page (recommended: Saudi landscape, 800×1200px)'),
+        'about_hero': ('About — Office Background', 'The banner image on the About Us page. Use a professional office or rail command center with your team.'),
+        'map':        ('Home — Train Network Map', 'Optional: upload a high-resolution map image. Leave blank to display the built-in interactive SVG map.'),
+        'hero_train': ('Home — Hero Foreground Train', 'Optional: a cutout or overlay image of a train shown over the hero. Leave blank if not needed.'),
+      } %}
+      <div class="row g-3">
+        {% for key, val in images.items() %}
+        {% set lb = labels.get(key, (key, '')) %}
+        <div class="col-12">
+          <div class="card" style="border:1px solid var(--border);">
+            <div class="card-body" style="display:flex;gap:20px;align-items:flex-start;">
+
+              <!-- Preview -->
+              <div style="width:140px;height:90px;border-radius:8px;overflow:hidden;flex-shrink:0;background:var(--cream);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;">
+                {% if val %}
+                <img src="{{ url_for('static', filename=val) }}" alt="{{ key }}"
+                     style="width:100%;height:100%;object-fit:cover;"
+                     onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+                <div style="display:none;width:100%;height:100%;align-items:center;justify-content:center;color:var(--muted);font-size:11px;flex-direction:column;gap:4px;padding:8px;text-align:center;">
+                  <i class="bi bi-image" style="font-size:20px;"></i>File not found
+                </div>
+                {% else %}
+                <div style="color:var(--muted);font-size:11px;text-align:center;padding:8px;">
+                  <i class="bi bi-image" style="font-size:20px;display:block;margin-bottom:4px;"></i>
+                  Using default
+                </div>
+                {% endif %}
+              </div>
+
+              <!-- Input -->
+              <div style="flex:1;">
+                <div style="font-weight:600;color:var(--green);font-size:14px;margin-bottom:2px;">{{ lb[0] }}</div>
+                <div style="font-size:12px;color:var(--muted);margin-bottom:10px;">{{ lb[1] }}</div>
+                <div style="display:flex;gap:6px;align-items:center;">
+                  <span style="font-size:12px;color:var(--muted);white-space:nowrap;font-family:monospace;">images/</span>
+                  <input type="text" name="{{ key }}" class="form-control"
+                         value="{{ val.replace('images/','') if val else '' }}"
+                         placeholder="filename.jpg (leave blank for default)"
+                         style="font-family:monospace;font-size:12px;">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-heritage px-5">
+          <i class="bi bi-check-lg me-1"></i> Save All Changes
+        </button>
+        <a href="{{ url_for('home') }}" class="btn btn-outline-heritage">Cancel</a>
+      </div>
+    </form>
+
+    <!-- Quick guide -->
+    <div class="mt-5 p-4 rounded-3" style="background:var(--cream);border:1px solid var(--border);">
+      <div style="font-weight:600;color:var(--green);margin-bottom:10px;font-size:14px;">
+        <i class="bi bi-book me-2"></i>How to change any image
+      </div>
+      <div style="font-size:13px;color:var(--muted);line-height:2.1;">
+        <strong style="color:var(--text);">Step 1</strong> — Get your photo (JPG or PNG, ideally wide format for hero images)<br>
+        <strong style="color:var(--text);">Step 2</strong> — Put it in <code>Sikka/static/images/</code><br>
+        <strong style="color:var(--text);">Step 3</strong> — Type just the filename in the box above (e.g. <code>my_train.jpg</code>)<br>
+        <strong style="color:var(--text);">Step 4</strong> — Click "Save All Changes" and refresh the page
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.search_title }}{% endblock %}
+{% block content %}
+
+<!-- SEARCH FORM -->
+<div class="card mb-4" style="border:2px solid var(--gold);">
+  <div class="card-header" style="background:linear-gradient(135deg,var(--green),var(--green2));">
+    <div class="card-header-title" style="color:var(--gold2);">
+      <i class="bi bi-search me-2"></i>{{ t.search_title }}
+    </div>
+  </div>
+  <div class="card-body p-4">
+    <form method="POST" action="{{ url_for('search') }}" id="searchForm">
+      <div class="row g-3 align-items-end">
+
+        <div class="col-md-4">
+          <label class="form-label">
+            <i class="bi bi-geo-alt" style="color:var(--gold);"></i> {{ t.from_city }}
+          </label>
+          <select name="from_city" id="fromCity" class="form-select" required onchange="loadDates()">
+            <option value="">— {{ t.from_city }} —</option>
+            {% for c in city_names %}
+            <option value="{{ c.en_name }}" {% if from_city==c.en_name or from_city==c.ar_name %}selected{% endif %}>
+              {{ c.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-auto d-flex align-items-end">
+          <button type="button" onclick="swapCities()" class="btn btn-outline-heritage"
+                  style="padding:10px 14px;" title="Swap">⇄</button>
+        </div>
+
+        <div class="col-md-4">
+          <label class="form-label">
+            <i class="bi bi-geo" style="color:var(--gold);"></i> {{ t.to_city }}
+          </label>
+          <select name="to_city" id="toCity" class="form-select" required onchange="loadDates()">
+            <option value="">— {{ t.to_city }} —</option>
+            {% for c in city_names %}
+            <option value="{{ c.en_name }}" {% if to_city==c.en_name or to_city==c.ar_name %}selected{% endif %}>
+              {{ c.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="col-md-3">
+          <label class="form-label">
+            <i class="bi bi-calendar3" style="color:var(--gold);"></i>
+            {{ t.travel_date }}
+            <span id="date-loading" style="font-size:10px;color:var(--gold);display:none;"> loading...</span>
+          </label>
+          <select name="travel_date" id="dateSelect" class="form-select" required>
+            <option value="">— {{ t.travel_date }} —</option>
+            {% if travel_date %}
+            <option value="{{ travel_date }}" selected>{{ travel_date }}</option>
+            {% endif %}
+          </select>
+          <div id="no-dates-msg" style="font-size:11px;color:#991B1B;margin-top:4px;display:none;">
+            No trains on this route yet.
+          </div>
+        </div>
+
+        <div class="col-auto">
+          <button type="submit" class="btn btn-gold px-4 py-2">
+            <i class="bi bi-search me-1"></i> {{ t.search_btn }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- RESULTS -->
+{% if searched %}
+  {% if results %}
+  <div style="margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;">
+    <div>
+      <div class="section-head" style="margin:0;">
+        <h2 style="font-size:18px;margin:0;">{{ t.results_title }}</h2>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;">
+        {{ from_city }} → {{ to_city }} &nbsp;|&nbsp;
+        <strong style="color:var(--green);">{{ travel_date }}</strong>
+        &nbsp;—&nbsp; {{ results|length }} train{% if results|length!=1 %}s{% endif %} found
+      </div>
+    </div>
+  </div>
+  <div class="row g-3">
+    {% for tr in results %}
+    <div class="col-12">
+      <div class="result-card">
+        <!-- Train thumbnail -->
+        <div class="result-thumb">
+          {% if tr.img %}
+          <img src="{{ url_for('static', filename=tr.img) }}" alt="{{ tr.name }}"
+               onerror="this.parentElement.style.background='var(--green)';this.remove()">
+          {% else %}
+          <div style="height:100%;display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,.4);font-size:28px;">🚆</div>
+          {% endif %}
+        </div>
+        <!-- Info -->
+        <div class="result-main">
+          <div class="result-train-name">{{ tr.name }}</div>
+          <div class="result-route">{{ tr.route }}</div>
+          <div class="result-times">
+            <div class="time-block">
+              <div class="time-label">{{ t.departure }}</div>
+              <div class="time-value">{{ tr.departure }}</div>
+            </div>
+            <div class="time-arrow">→</div>
+            <div class="time-block">
+              <div class="time-label">{{ t.arrival }}</div>
+              <div class="time-value">{{ tr.arrival }}</div>
+            </div>
+          </div>
+        </div>
+        <!-- Availability -->
+        <div class="result-avail">
+          <div class="avail-row">
+            <span class="avail-label">Economy</span>
+            <span class="avail-count {% if tr.avail_eco==0 %}avail-full{% endif %}">
+              {% if tr.avail_eco>0 %}{{ tr.avail_eco }} seats{% else %}Full{% endif %}
+            </span>
+          </div>
+          <div class="avail-row mt-2">
+            <span class="avail-label" style="color:var(--gold);">Business</span>
+            <span class="avail-count {% if tr.avail_bus==0 %}avail-full{% endif %}">
+              {% if tr.avail_bus>0 %}{{ tr.avail_bus }} seats{% else %}Full{% endif %}
+            </span>
+          </div>
+        </div>
+        <!-- Price + CTA -->
+        <div class="result-pricing">
+          <div class="price-from">from</div>
+          <div class="price-amount">{{ tr.price_economy|int }} SAR</div>
+          <div class="price-note">Business: {{ tr.price_business|int }} SAR</div>
+          {% if tr.avail_eco>0 or tr.avail_bus>0 %}
+          <a href="{{ url_for('book', train_id=tr.id, travel_date=travel_date) }}"
+             class="btn btn-heritage mt-3 w-100">
+            {{ t.select_this }}
+          </a>
+          {% else %}
+          <button class="btn mt-3 w-100" disabled
+                  style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;cursor:not-allowed;font-size:13px;">
+            Fully Booked
+          </button>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="card">
+    <div class="card-body text-center py-5">
+      <i class="bi bi-train-front" style="font-size:52px;color:var(--border);"></i>
+      <p class="mt-3" style="color:var(--muted);font-size:15px;font-family:'Playfair Display',serif;">
+        {{ t.no_results }}
+      </p>
+      <p style="font-size:13px;color:var(--muted);">{{ from_city }} → {{ to_city }} &nbsp;|&nbsp; {{ travel_date }}</p>
+    </div>
+  </div>
+  {% endif %}
+{% endif %}
+
+{% endblock %}
+{% block scripts %}
+<script>
+async function loadDates() {
+  const fc = document.getElementById('fromCity').value;
+  const tc = document.getElementById('toCity').value;
+  const sel = document.getElementById('dateSelect');
+  const msg = document.getElementById('no-dates-msg');
+  const loader = document.getElementById('date-loading');
+  if (!fc || !tc) return;
+  loader.style.display = 'inline';
+  sel.innerHTML = '<option value="">Loading…</option>';
+  msg.style.display = 'none';
+  try {
+    const res = await fetch(`/api/dates?from=${encodeURIComponent(fc)}&to=${encodeURIComponent(tc)}`);
+    const dates = await res.json();
+    sel.innerHTML = '<option value="">— {{ t.travel_date }} —</option>';
+    if (dates.length === 0) {
+      msg.style.display = 'block';
+    } else {
+      dates.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d; opt.textContent = d;
+        if (d === '{{ travel_date }}') opt.selected = true;
+        sel.appendChild(opt);
+      });
+    }
+  } catch(e) { sel.innerHTML = '<option value="">Error loading dates</option>'; }
+  loader.style.display = 'none';
+}
+function swapCities() {
+  const f = document.getElementById('fromCity');
+  const t_ = document.getElementById('toCity');
+  const tmp = f.value; f.value = t_.value; t_.value = tmp;
+  loadDates();
+}
+// Auto-load dates if returning from a search
+window.addEventListener('DOMContentLoaded', () => {
+  if (document.getElementById('fromCity').value && document.getElementById('toCity').value) {
+    loadDates();
+  }
+});
+</script>
+{% endblock %}

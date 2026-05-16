@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.passengers }}{% endblock %}
+{% block content %}
+{% set role = session.get('user_role') or session.get('role','') %}
+{% if role == 'customer' %}
+<div class="alert alert-info py-2 mb-3" style="font-size:13px;">
+  <i class="bi bi-info-circle me-2"></i>
+  {{ "تظهر هنا فقط الركاب الذين أضفتهم أنت." if session.get('lang','en')=='ar'
+     else "You can only see and manage passengers you have added." }}
+</div>
+{% endif %}
+<div class="card">
+  <div class="card-header">
+    <div class="card-header-title">{{ t.passengers }}</div>
+    <a href="{{ url_for('add_passenger') }}" class="btn btn-gold btn-sm px-3">+ {{ t.add_passenger }}</a>
+  </div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead><tr><th>#</th><th>{{ t.full_name }}</th><th>{{ t.national_id }}</th><th>{{ t.email }}</th><th>{{ t.phone }}</th><th>{{ t.actions }}</th></tr></thead>
+      <tbody>
+      {% for p in passengers %}
+      <tr>
+        <td style="color:var(--muted);">{{ loop.index }}</td>
+        <td class="fw-semibold">{{ p.name }}</td>
+        <td>{{ p.national_id }}</td>
+        <td>{{ p.email or '—' }}</td>
+        <td>{{ p.phone or '—' }}</td>
+        <td><a href="{{ url_for('edit_passenger',pid=p.id) }}" class="btn btn-sm btn-outline-heritage me-1">{{ t.edit }}</a>
+          <form method="POST" action="{{ url_for('delete_passenger',pid=p.id) }}" class="d-inline"
+                onsubmit="return confirm('Delete this passenger?')">
+            <button class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;">
+              <i class="bi bi-trash"></i>
+            </button>
+          </form></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6" class="text-center py-5" style="color:var(--muted);">No passengers yet.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

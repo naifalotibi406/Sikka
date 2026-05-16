@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.help }}{% endblock %}
+{% block content %}
+
+<div class="row g-3">
+  <div class="col-md-8">
+    <div class="card mb-3">
+      <div class="card-header"><div class="card-header-title">{{ t.faq_title }}</div></div>
+      <div class="card-body">
+        {% set faqs = [
+          (t.faq_book_q, t.faq_book_a),
+          (t.faq_cancel_q, t.faq_cancel_a),
+          (t.faq_child_q, t.faq_child_a),
+          (t.faq_class_q, t.faq_class_a),
+          (t.faq_id_q, t.faq_id_a),
+        ] %}
+        {% for q, a in faqs %}
+        <div class="faq-item" onclick="this.classList.toggle('open')">
+          <div class="faq-q">{{ q }}<span class="faq-icon">+</span></div>
+          <div class="faq-a">{{ a }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">{{ t.policy_title }}</div></div>
+      <div class="card-body">
+        {% for p in [t.policy_1, t.policy_2, t.policy_3, t.policy_4] %}
+        <div class="policy-item">
+          <div class="policy-num">{{ loop.index }}</div>
+          <div>{{ p }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card mb-3">
+      <div class="card-header"><div class="card-header-title">{{ t.contact_title }}</div></div>
+      <div class="card-body" style="font-size:13px;color:var(--muted);">
+        <div class="d-flex align-items-center gap-2 mb-3">
+          <i class="bi bi-envelope" style="color:var(--gold);font-size:18px;"></i>
+          <a href="mailto:{{ t.contact_email }}" style="color:var(--green);">{{ t.contact_email }}</a>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <i class="bi bi-telephone" style="color:var(--gold);font-size:18px;"></i>
+          <span>{{ t.contact_phone }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">Quick Links</div></div>
+      <div class="card-body p-0">
+        <a href="{{ url_for('book') }}" class="d-flex align-items-center gap-2 p-3 text-decoration-none" style="border-bottom:1px solid var(--border);color:var(--text);font-size:13px;">
+          <i class="bi bi-ticket-perforated" style="color:var(--gold);"></i> {{ t.book_now }}
+        </a>
+        <a href="{{ url_for('reservations') }}" class="d-flex align-items-center gap-2 p-3 text-decoration-none" style="border-bottom:1px solid var(--border);color:var(--text);font-size:13px;">
+          <i class="bi bi-list-check" style="color:var(--gold);"></i> {{ t.my_reservations }}
+        </a>
+        <a href="{{ url_for('about') }}" class="d-flex align-items-center gap-2 p-3 text-decoration-none" style="color:var(--text);font-size:13px;">
+          <i class="bi bi-info-circle" style="color:var(--gold);"></i> {{ t.about }}
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

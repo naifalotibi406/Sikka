@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block page_title %}{% if passenger %}{{ t.edit }}{% else %}{{ t.add_passenger }}{% endif %}{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header"><div class="card-header-title">{% if passenger %}{{ t.edit }}{% else %}{{ t.add_passenger }}{% endif %}</div></div>
+      <div class="card-body p-4">
+        <form method="POST">
+          <div class="mb-3"><label class="form-label">{{ t.full_name }}</label><input type="text" name="name" class="form-control" value="{{ passenger.name if passenger else '' }}" required></div>
+          <div class="mb-3">
+            <label class="form-label">{{ t.national_id }} <small style="color:var(--muted);font-weight:400;">10 digits, starts with 1 or 2</small></label>
+            <input type="text" name="national_id" class="form-control" maxlength="10" placeholder="1XXXXXXXXX or 2XXXXXXXXX" value="{{ passenger.national_id if passenger else '' }}" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">{{ t.email }} <small style="color:var(--muted);font-weight:400;">optional</small></label>
+            <input type="email" name="email" class="form-control" placeholder="example@email.com" value="{{ passenger.email if passenger else '' }}">
+          </div>
+          <div class="mb-4">
+            <label class="form-label">{{ t.phone }} <small style="color:var(--muted);font-weight:400;">10 digits, starts with 05</small></label>
+            <input type="text" name="phone" class="form-control" maxlength="10" placeholder="05XXXXXXXX" value="{{ passenger.phone if passenger else '' }}">
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-heritage">{{ t.save }}</button>
+            <a href="{{ url_for('passengers') }}" class="btn btn-outline-heritage">{{ t.cancel }}</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

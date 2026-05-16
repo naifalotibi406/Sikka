@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block page_title %}{{ t.my_reservations if session.role=='customer' else t.reservations }}{% endblock %}
+{% block content %}
+<div class="mb-3 text-end">
+  <a href="{{ url_for('book') }}" class="btn btn-gold px-4">+ {{ t.new_reservation }}</a>
+</div>
+<div class="card">
+  <div class="card-header"><div class="card-header-title">{{ t.reservations }}</div></div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead><tr>
+        <th>#</th><th>{{ t.passenger }}</th><th>{{ t.train_name }}</th>
+        <th>{{ t.seat }}</th><th>{{ t.seat_class }}</th><th>{{ t.passenger_type }}</th>
+        <th>{{ t.price_paid }}</th><th>{{ t.status }}</th><th>{{ t.date }}</th><th></th>
+      </tr></thead>
+      <tbody>
+      {% for r in reservations %}
+      <tr>
+        <td style="color:var(--muted);">#{{ r.id }}</td>
+        <td class="fw-semibold">{{ r.pname }}<br><small style="color:var(--muted);">{{ r.national_id }}</small></td>
+        <td>{{ r.tname }}<br><small style="color:var(--muted);">{{ r.route }}</small></td>
+        <td><span style="background:var(--green);color:var(--gold2);padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;">{{ r.seat_no }}</span></td>
+        <td>{% if r.seat_class=='business' %}<span class="badge-business">{{ t.business }}</span>{% else %}<span class="badge-economy">{{ t.economy }}</span>{% endif %}</td>
+        <td>{% if r.passenger_type=='adult' %}<span class="badge-adult">{{ t.adult }}</span>{% else %}<span class="badge-child">{{ t.child }}</span>{% endif %}</td>
+        <td class="fw-semibold" style="color:var(--green);">{{ "%.2f"|format(r.final_paid_price if r.final_paid_price else r.price_paid) }} SAR</td>
+        <td>{% if r.status=='confirmed' %}<span class="badge-confirmed">{{ t.confirmed }}</span>{% else %}<span class="badge-cancelled">{{ t.cancelled }}</span>{% endif %}</td>
+        <td><small style="color:var(--muted);">{{ r.created_at[:10] }}</small></td>
+        <td>
+          {% if r.status=='confirmed' %}
+          <form method="POST" action="{{ url_for('cancel_reservation',rid=r.id) }}" onsubmit="return confirm('Cancel?')">
+            <button class="btn btn-sm" style="background:#FEF2F2;color:#991B1B;border:1px solid #FECACA;font-size:12px;">{{ t.cancel }}</button>
+          </form>
+          {% else %}<span style="color:var(--muted);">—</span>{% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="10" class="text-center py-5" style="color:var(--muted);">No reservations found.</td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
