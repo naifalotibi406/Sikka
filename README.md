@@ -24,7 +24,7 @@ Sikka is a full-featured train schedule and reservation management system built 
 ## 🚀 How to Run
 
 ```
-pip install -r requirements.txt
+pip install flask
 python main.py
 ```
 
