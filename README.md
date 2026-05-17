@@ -11,7 +11,7 @@ Sikka is a full-featured train schedule and reservation management system built 
 - 🎫 Smart booking — Prevents double-booking
 - 💺 Business / Economy + Adult / Child pricing
 - 📊 Live dashboard with revenue and occupancy
-- 🌙 Saudi heritage dark mode
+- 🌙 Saudi heritage
 - 🔒 SHA-256 password hashing
 
 ## 🛠️ Tech Stack
