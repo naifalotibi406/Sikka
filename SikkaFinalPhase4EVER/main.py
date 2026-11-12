@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import sqlite3, hashlib, os
 from datetime import date, timedelta
 from functools import wraps
+from security import encrypt, blind_index, reveal, encrypt_existing_rows
 
 app = Flask(__name__)
 app.secret_key = "sikka_heritage_2026_secure"
@@ -252,9 +253,16 @@ def init_db():
         "ALTER TABLE users ADD COLUMN email TEXT DEFAULT ''",
         "ALTER TABLE users ADD COLUMN phone TEXT DEFAULT ''",
         "ALTER TABLE users ADD COLUMN national_id TEXT DEFAULT ''",
+        "ALTER TABLE passengers ADD COLUMN nid_hash TEXT",
+        "ALTER TABLE users ADD COLUMN nid_hash TEXT",
     ]:
         try: c.execute(sql)
         except: pass
+
+    # ── Record encryption: encrypt old plain rows, then keep National IDs unique by hash
+    encrypt_existing_rows(conn)
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_passengers_nid ON passengers(nid_hash)")
+    c.execute("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_nid ON users(nid_hash)")
 
     # ── System users ───────────────────────────────────────────────────────────
     for u in [
@@ -292,8 +300,9 @@ def init_db():
         ("Joud Al-Bader",           "2012345670", "joud.bader@sikka.sa",          "0552345610"),
     ]
     for p in passengers_seed:
-        try: c.execute("INSERT INTO passengers(name,national_id,email,phone) VALUES(?,?,?,?)", p)
-        except: pass
+        try: c.execute("INSERT INTO passengers(name,national_id,email,phone,nid_hash) VALUES(?,?,?,?,?)",
+                       (p[0], encrypt(p[1]), encrypt(p[2]), encrypt(p[3]), blind_index(p[1])))
+        except sqlite3.IntegrityError: pass
 
     # ── Comprehensive train network — all city pairs with return routes ─────────
     # Format: (name, route, departure, arrival, cap_eco, cap_bus, price_eco, price_bus)
@@ -523,7 +532,7 @@ def signup():
                 errors.append("Username already taken.")
             if email and conn.execute("SELECT id FROM users WHERE email=?", (email,)).fetchone():
                 errors.append("Email already registered.")
-            if national_id and conn.execute("SELECT id FROM users WHERE national_id=?", (national_id,)).fetchone():
+            if national_id and conn.execute("SELECT id FROM users WHERE nid_hash=?", (blind_index(national_id),)).fetchone():
                 errors.append("National ID already registered.")
             conn.close()
         if errors:
@@ -532,8 +541,9 @@ def signup():
         conn = get_db()
         try:
             conn.execute(
-                "INSERT INTO users(username,password,role,full_name,email,phone,national_id) VALUES(?,?,?,?,?,?,?)",
-                (username, sha(password), "customer", full_name, email, phone, national_id)
+                "INSERT INTO users(username,password,role,full_name,email,phone,national_id,nid_hash) VALUES(?,?,?,?,?,?,?,?)",
+                (username, sha(password), "customer", full_name, email, encrypt(phone),
+                 encrypt(national_id), blind_index(national_id))
             )
             conn.commit()
             flash("Account created successfully! Please sign in.", "success")
@@ -645,7 +655,7 @@ def search():
 @login_required
 def book():
     t = get_t(); conn = get_db()
-    pax_list    = conn.execute("SELECT * FROM passengers ORDER BY name").fetchall()
+    pax_list    = reveal(conn.execute("SELECT * FROM passengers ORDER BY name").fetchall())
     selected    = None; eco_seats = []; bus_seats = []
     train_id    = request.args.get("train_id")    or request.form.get("train_id")
     travel_date = request.args.get("travel_date") or request.form.get("travel_date", "")
@@ -784,7 +794,7 @@ def passengers():
     else:
         rows = conn.execute("SELECT * FROM passengers WHERE created_by=? ORDER BY name", (uid,)).fetchall()
     conn.close()
-    return render_template("passengers.html", t=t, dir=get_dir(), passengers=rows)
+    return render_template("passengers.html", t=t, dir=get_dir(), passengers=reveal(rows))
 
 @app.route("/passengers/add", methods=["GET", "POST"])
 @login_required
@@ -810,8 +820,8 @@ def add_passenger():
         try:
             conn = get_db()
             conn.execute(
-                "INSERT INTO passengers(name,national_id,email,phone,created_by) VALUES(?,?,?,?,?)",
-                (name, nid, email, phone, session["user_id"])
+                "INSERT INTO passengers(name,national_id,email,phone,nid_hash,created_by) VALUES(?,?,?,?,?,?)",
+                (name, encrypt(nid), encrypt(email), encrypt(phone), blind_index(nid), session["user_id"])
             )
             conn.commit(); conn.close(); flash("Passenger added.", "success")
             return redirect(url_for("passengers"))
@@ -829,15 +839,20 @@ def edit_passenger(pid):
     if role == "customer" and not _is_own_passenger(p, session["user_id"]):
         conn.close(); flash("Access denied.", "danger"); return redirect(url_for("passengers"))
     if request.method == "POST":
-        conn.execute(
-            "UPDATE passengers SET name=?,national_id=?,email=?,phone=? WHERE id=?",
-            (request.form.get("name"), request.form.get("national_id"),
-             request.form.get("email"), request.form.get("phone"), pid)
-        )
-        conn.commit(); conn.close(); flash("Passenger updated.", "success")
+        nid = request.form.get("national_id", "").strip()
+        try:
+            conn.execute(
+                "UPDATE passengers SET name=?,national_id=?,email=?,phone=?,nid_hash=? WHERE id=?",
+                (request.form.get("name"), encrypt(nid), encrypt(request.form.get("email")),
+                 encrypt(request.form.get("phone")), blind_index(nid), pid)
+            )
+            conn.commit(); flash("Passenger updated.", "success")
+        except sqlite3.IntegrityError:
+            flash("National ID already exists.", "danger")
+        conn.close()
         return redirect(url_for("passengers"))
     conn.close()
-    return render_template("passenger_form.html", t=t, dir=get_dir(), passenger=p)
+    return render_template("passenger_form.html", t=t, dir=get_dir(), passenger=reveal([p])[0])
 
 @app.route("/passengers/delete/<int:pid>", methods=["POST"])
 @login_required
@@ -874,7 +889,7 @@ def reservations():
             ORDER BY r.id DESC
         """).fetchall()
     conn.close()
-    return render_template("reservations.html", t=t, dir=get_dir(), reservations=rows)
+    return render_template("reservations.html", t=t, dir=get_dir(), reservations=reveal(rows))
 
 @app.route("/cancel/<int:rid>", methods=["POST"])
 @login_required
