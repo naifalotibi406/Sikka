@@ -24,7 +24,9 @@ def test_1_encrypt_and_decrypt():
 
 
 def test_2_same_value_gives_different_ciphertext():
-    assert security.encrypt("0512345601") != security.encrypt("0512345601")
+    first = security.encrypt("0512345601")
+    second = security.encrypt("0512345601")
+    assert first != second
 
 
 def test_3_changed_value_is_rejected():
